@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: #16181d;
+  --paper: #fafbfd;
+  --signal: #2456f6;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-paper text-ink font-body antialiased;
+}
+
+/* --- Focus visibility (quality floor) --- */
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* --- Inputs --- */
+.field {
+  @apply w-full rounded-lg border border-hairline bg-white px-3 py-2 text-sm
+    placeholder:text-slate2/50 focus:border-signal focus:outline-none
+    focus:ring-2 focus:ring-signal/20 transition-colors;
+}
+.label {
+  @apply mb-1 block text-xs font-medium uppercase tracking-wide text-slate2;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2
+    text-sm font-semibold transition-all disabled:opacity-50
+    disabled:pointer-events-none active:scale-[.98];
+}
+.btn-primary {
+  @apply btn bg-signal text-white hover:bg-[#1c46d6] shadow-sm;
+}
+.btn-ghost {
+  @apply btn border border-hairline bg-white text-ink hover:border-signal/40 hover:text-signal;
+}
+.btn-danger {
+  @apply btn text-coral hover:bg-coral/10;
+}
+
+/* --- Preview sheet & signature pulse --- */
+.sheet {
+  @apply bg-white shadow-sheet rounded-sm;
+}
+
+@keyframes sectionPulse {
+  0% { background-color: rgba(36, 86, 246, 0.14); }
+  100% { background-color: transparent; }
+}
+.pulse {
+  animation: sectionPulse 1.4s ease-out 1;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .pulse { animation: none; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* --- Scrollbars (subtle) --- */
+.scroll-slim::-webkit-scrollbar { width: 8px; height: 8px; }
+.scroll-slim::-webkit-scrollbar-thumb { @apply rounded-full bg-hairline; }
+.scroll-slim::-webkit-scrollbar-track { background: transparent; }
+
+/* --- Score dial --- */
+.dial-track { stroke: #edf0f5; }
