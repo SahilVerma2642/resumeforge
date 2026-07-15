@@ -117,6 +117,7 @@ function AiToolbar() {
   const [rawText, setRawText] = useState("");
   const [busy, setBusy] = useState<"import" | "improve" | "file" | null>(null);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [pending, setPending] = useState<{ resume: Resume; source: string } | null>(null);
   const [confirmImprove, setConfirmImprove] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -174,6 +175,13 @@ function AiToolbar() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
+      if (JSON.stringify(data.resume) === JSON.stringify(resume)) {
+        setInfo(
+          "The AI reviewed your resume and found nothing it would change - it's already in good shape. Try the Tailor tab with a specific JD for targeted improvements."
+        );
+        return;
+      }
+      setInfo("");
       // Nothing is applied yet: the preview switches to a GitHub-style diff
       // with Apply / Discard controls.
       startReview(data.resume);
@@ -294,12 +302,17 @@ function AiToolbar() {
         </div>
       )}
       {error && <p className="mt-2 text-xs text-coral">{error}</p>}
+      {info && (
+        <p className="mt-2 rounded-lg border border-mint/40 bg-mint/5 px-3 py-2 text-xs">
+          {info}
+        </p>
+      )}
       <ConfirmModal
         open={confirmImprove}
         onClose={() => setConfirmImprove(false)}
         onConfirm={runImprove}
         title="Improve with AI"
-        body="Claude will rewrite your resume for stronger verbs and clearer impact, without inventing facts. You will see every change as a diff in the preview and nothing is saved until you apply it."
+        body="The AI will rewrite your resume for stronger verbs and clearer impact, without inventing facts. You will see every change as a red/green diff in the preview panel and nothing is saved until you apply it."
         confirmLabel="Show me the changes"
       />
     </div>

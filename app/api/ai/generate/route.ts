@@ -3,6 +3,31 @@ import { z } from "zod";
 import { callClaudeJSON, MODELS, RESUME_SCHEMA_DOC } from "@/lib/anthropic";
 import type { Resume } from "@/lib/types";
 
+/**
+ * Weaker models sometimes regenerate the internal ids despite instructions,
+ * which breaks the before/after diff (it matches bullets and roles by id).
+ * Since the prompt forbids adding/removing jobs, we can safely restore the
+ * original ids by position.
+ */
+function reconcileIds(original: Resume, rewritten: Resume): Resume {
+  const out: Resume = JSON.parse(JSON.stringify(rewritten));
+  out.experience?.forEach((exp, i) => {
+    const orig = original.experience?.[i];
+    if (!orig) return;
+    exp.id = orig.id;
+    exp.bullets?.forEach((b, j) => {
+      if (orig.bullets?.[j]) b.id = orig.bullets[j].id;
+    });
+  });
+  out.education?.forEach((ed, i) => {
+    if (original.education?.[i]) ed.id = original.education[i].id;
+  });
+  out.projects?.forEach((pr, i) => {
+    if (original.projects?.[i]) pr.id = original.projects[i].id;
+  });
+  return out;
+}
+
 export const maxDuration = 60;
 
 const Body = z.object({
@@ -31,7 +56,7 @@ export async function POST(req: Request) {
       MODELS.smart,
       6000
     );
-    return NextResponse.json({ resume: out });
+    return NextResponse.json({ resume: reconcileIds(resume, out) });
   } catch (e: any) {
     return NextResponse.json(
       { error: e?.message ?? "Generation failed" },
