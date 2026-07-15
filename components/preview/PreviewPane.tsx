@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useResumeStore } from "@/lib/store";
 import { Resume, FontSize, TemplateId } from "@/lib/types";
 import { Download, FileSearch, Loader2, X } from "lucide-react";
@@ -90,13 +91,15 @@ function PdfActions() {
         </button>
       </div>
 
-      {previewUrl && (
-        <div
-          className="fixed inset-0 z-50 flex flex-col bg-ink/60 p-3 sm:p-8"
-          role="dialog"
-          aria-label="PDF preview"
-          onClick={closePreview}
-        >
+      {previewUrl &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-50 flex flex-col bg-ink/60 p-3 sm:p-8"
+            role="dialog"
+            aria-label="PDF preview"
+            onClick={closePreview}
+          >
           <div
             className="mx-auto flex h-full w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-white shadow-sheet"
             onClick={(e) => e.stopPropagation()}
@@ -116,7 +119,8 @@ function PdfActions() {
             </div>
             <iframe src={previewUrl} title="Resume PDF preview" className="min-h-0 w-full flex-1" />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

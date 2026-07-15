@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { PenLine, Wand2, Gauge, TrendingUp, Eye, X, LogOut } from "lucide-react";
-import { useRouter } from "next/navigation";
 import EditorPanel from "@/components/builder/EditorPanel";
 import TailorPanel from "@/components/tailor/TailorPanel";
 import ScorePanel from "@/components/score/ScorePanel";
@@ -22,10 +21,11 @@ const TABS: { id: Tab; label: string; icon: any }[] = [
 export default function BuilderPage() {
   const [tab, setTab] = useState<Tab>("edit");
   const [mobilePreview, setMobilePreview] = useState(false);
-  const router = useRouter();
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/");
+    // Hard navigation: resets the client router cache so the authenticated
+    // /builder page can't be served from cache after logging out.
+    window.location.assign("/");
   };
 
   return (
