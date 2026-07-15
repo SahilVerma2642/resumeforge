@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { PenLine, Wand2, Gauge, TrendingUp, Eye, X, LogOut } from "lucide-react";
 import EditorPanel from "@/components/builder/EditorPanel";
@@ -21,6 +21,13 @@ const TABS: { id: Tab; label: string; icon: any }[] = [
 export default function BuilderPage() {
   const [tab, setTab] = useState<Tab>("edit");
   const [mobilePreview, setMobilePreview] = useState(false);
+  const [provider, setProvider] = useState("");
+  useEffect(() => {
+    fetch("/api/ai/provider")
+      .then((r) => r.json())
+      .then((d) => setProvider(d.label ?? ""))
+      .catch(() => {});
+  }, []);
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     // Hard navigation: resets the client router cache so the authenticated
@@ -65,6 +72,14 @@ export default function BuilderPage() {
           <Eye size={16} /> Preview
         </button>
         <div className="hidden items-center gap-3 lg:flex">
+          {provider && (
+            <span
+              className="rounded-full border border-hairline bg-paper px-2.5 py-1 text-[11px] font-medium text-slate2"
+              title="Which AI provider this deployment is using"
+            >
+              AI: {provider}
+            </span>
+          )}
           <span className="text-xs text-slate2">Autosaved to your browser</span>
           <button
             className="btn-ghost !px-2.5 !py-1.5 text-xs"

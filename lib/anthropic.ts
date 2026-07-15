@@ -17,7 +17,7 @@ export const MODELS = {
 
 type Provider = "anthropic" | "groq" | "cli";
 
-function activeProvider(): Provider {
+export function activeProvider(): Provider {
   const forced = process.env.AI_PROVIDER?.trim().toLowerCase();
   if (forced === "anthropic" || forced === "groq" || forced === "cli") return forced;
   if (process.env.ANTHROPIC_API_KEY) return "anthropic";
