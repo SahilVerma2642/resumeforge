@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { Lock, Loader2, ArrowRight } from "lucide-react";
 
 function LoginForm() {
-  const router = useRouter();
   const params = useSearchParams();
   const next = params.get("next") || "/builder";
   const [password, setPassword] = useState("");
@@ -17,6 +16,7 @@ function LoginForm() {
     if (!password) return;
     setBusy(true);
     setError("");
+    const t0 = performance.now();
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -25,7 +25,11 @@ function LoginForm() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Login failed.");
-      router.push(next);
+      const total = Math.round(performance.now() - t0);
+      console.log(`[auth] login round trip ${total}ms (server ${data.serverMs}ms), navigating…`);
+      // Hard navigation: bypasses the client router cache and guarantees the
+      // fresh session cookie is sent on the next request.
+      window.location.assign(next);
     } catch (e: any) {
       setError(e.message ?? "Login failed.");
       setBusy(false);

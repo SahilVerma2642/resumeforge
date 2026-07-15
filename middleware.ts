@@ -81,7 +81,11 @@ export async function middleware(req: NextRequest) {
 
   // --- Auth gate (active only when AUTH_PASSWORD + AUTH_SECRET are set) ---
   if (authEnabled()) {
+    const tv = Date.now();
     const ok = await verifySessionToken(req.cookies.get(SESSION_COOKIE)?.value);
+    if (Date.now() - tv > 50) {
+      console.log(`[auth] session verify took ${Date.now() - tv}ms for ${path}`);
+    }
     if (!ok) {
       if (path.startsWith("/api/")) {
         return NextResponse.json(

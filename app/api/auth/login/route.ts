@@ -8,9 +8,12 @@ import {
   SESSION_MAX_AGE_SEC,
 } from "@/lib/auth";
 
+export const runtime = "edge";
+
 const Body = z.object({ password: z.string().min(1).max(200) });
 
 export async function POST(req: Request) {
+  const t0 = Date.now();
   if (!authEnabled()) {
     return NextResponse.json(
       { error: "Auth is not configured on this deployment." },
@@ -24,7 +27,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Wrong password." }, { status: 401 });
     }
     const token = await createSessionToken();
-    const res = NextResponse.json({ ok: true });
+    const ms = Date.now() - t0;
+    console.log(`[auth] login verified in ${ms}ms`);
+    const res = NextResponse.json({ ok: true, serverMs: ms });
     res.cookies.set(SESSION_COOKIE, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
