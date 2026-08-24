@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useResumeStore } from "@/lib/store";
+import { useResumeStore, aiProviderHeader } from "@/lib/store";
 import { resumeHasContent } from "@/lib/types";
 import SuggestionList from "@/components/shared/SuggestionList";
 import { Wand2, Loader2, TrendingUp } from "lucide-react";
@@ -30,7 +30,7 @@ function MatchRing({ score }: { score: number }) {
 }
 
 export default function TailorPanel({ onEnhance }: { onEnhance?: () => void }) {
-  const { resume, suggestions, matchScore, setSuggestions, setScore, jd, setJd } = useResumeStore();
+  const { resume, suggestions, matchScore, setSuggestions, setScore, jd, setJd, setKeywords } = useResumeStore();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const ready = resumeHasContent(resume);
@@ -44,12 +44,16 @@ export default function TailorPanel({ onEnhance }: { onEnhance?: () => void }) {
     try {
       const res = await fetch("/api/ai/tailor", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...aiProviderHeader() },
         body: JSON.stringify({ resume, jobDescription: jd }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setSuggestions(data.suggestions ?? [], data.matchScore ?? null);
+      setKeywords({
+        matched: data.matchedKeywords ?? [],
+        missing: [...(data.missingSkills ?? []), ...(data.keywordsToAdd ?? [])],
+      });
     } catch (e: any) {
       setError(e.message ?? "Analysis failed - try again.");
     } finally {
@@ -61,7 +65,7 @@ export default function TailorPanel({ onEnhance }: { onEnhance?: () => void }) {
     try {
       const res = await fetch("/api/ai/score", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...aiProviderHeader() },
         body: JSON.stringify({
           resume: useResumeStore.getState().resume,
           jobDescription: jd || null,

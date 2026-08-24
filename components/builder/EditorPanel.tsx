@@ -3,12 +3,15 @@
 import { useState, useRef, ReactNode } from "react";
 import { Resume, resumeHasContent } from "@/lib/types";
 import { ConfirmModal } from "@/components/ui/Modal";
+import { bulletStrength } from "@/lib/strength";
+import VersionsButton from "@/components/builder/VersionsModal";
 import {
   useResumeStore,
   newBullet,
   newExperience,
   newEducation,
   newProject,
+  aiProviderHeader,
 } from "@/lib/store";
 import {
   ChevronDown,
@@ -109,6 +112,34 @@ function TagInput({
   );
 }
 
+/* ---------- #1 bullet strength meter (local, instant) ---------- */
+
+function StrengthDots({ text }: { text: string }) {
+  if (!text.trim()) return null;
+  const st = bulletStrength(text);
+  const dots: [boolean, string][] = [
+    [st.verb, "Starts with an action verb"],
+    [st.metric, "Contains a number or scale"],
+    [st.concise, "6-28 words"],
+  ];
+  return (
+    <span
+      className="mt-1 inline-flex items-center gap-1"
+      title={dots.map(([ok, label]) => `${ok ? "✓" : "✗"} ${label}`).join("  ·  ")}
+    >
+      {dots.map(([ok], i) => (
+        <span
+          key={i}
+          className={`h-1.5 w-1.5 rounded-full ${ok ? "bg-mint" : "bg-hairline"}`}
+        />
+      ))}
+      <span className="ml-1 text-[10px] text-slate2">
+        {st.score === 3 ? "strong" : st.score === 2 ? "good" : "weak"}
+      </span>
+    </span>
+  );
+}
+
 /* ---------- Import / AI improve toolbar ---------- */
 
 function AiToolbar() {
@@ -128,7 +159,11 @@ function AiToolbar() {
     try {
       const form = new FormData();
       form.append("file", file);
-      const res = await fetch("/api/ai/extract-file", { method: "POST", body: form });
+      const res = await fetch("/api/ai/extract-file", {
+        method: "POST",
+        headers: aiProviderHeader(),
+        body: form,
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setPending({ resume: data.resume, source: file.name });
@@ -147,7 +182,7 @@ function AiToolbar() {
     try {
       const res = await fetch("/api/ai/extract", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...aiProviderHeader() },
         body: JSON.stringify({ rawText }),
       });
       const data = await res.json();
@@ -170,7 +205,7 @@ function AiToolbar() {
     try {
       const res = await fetch("/api/ai/generate", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...aiProviderHeader() },
         body: JSON.stringify({ resume, jdAnalysis: null }),
       });
       const data = await res.json();
@@ -242,6 +277,7 @@ function AiToolbar() {
             <Undo2 size={14} /> Revert AI changes
           </button>
         )}
+        <VersionsButton />
       </div>
       {importOpen && (
         <div className="mt-3">
@@ -452,16 +488,19 @@ export default function EditorPanel() {
               <div className="space-y-2">
                 {exp.bullets.map((b, j) => (
                   <div key={b.id} className="flex items-start gap-2">
-                    <textarea
-                      className="field min-h-[52px]"
-                      placeholder="Start with an action verb; quantify if you can."
-                      value={b.text}
-                      onChange={(e) =>
-                        patch((d) => {
-                          d.experience[i].bullets[j].text = e.target.value;
-                        }, "experience")
-                      }
-                    />
+                    <div className="flex-1">
+                      <textarea
+                        className="field min-h-[52px]"
+                        placeholder="Start with an action verb; quantify if you can."
+                        value={b.text}
+                        onChange={(e) =>
+                          patch((d) => {
+                            d.experience[i].bullets[j].text = e.target.value;
+                          }, "experience")
+                        }
+                      />
+                      <StrengthDots text={b.text} />
+                    </div>
                     <button
                       className="btn-danger !px-2 !py-2"
                       aria-label="Delete bullet"

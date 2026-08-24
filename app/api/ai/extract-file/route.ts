@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import mammoth from "mammoth";
 import { extractResumeFromText } from "@/lib/extractResume";
+import { resolveProvider } from "@/lib/anthropic";
 
 export const runtime = "nodejs"; // pdf-parse & mammoth need Node, not Edge
 export const maxDuration = 60;
@@ -62,7 +63,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const resume = await extractResumeFromText(text.slice(0, 40_000));
+    const provider = resolveProvider(req.headers.get("x-ai-provider"));
+    const resume = await extractResumeFromText(text.slice(0, 40_000), provider);
     return NextResponse.json({ resume });
   } catch (e: any) {
     return NextResponse.json(

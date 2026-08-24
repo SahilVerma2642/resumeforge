@@ -1,4 +1,8 @@
 import { NextResponse } from "next/server";
+
+// Edge runtime: no cold start, executes at the location nearest the visitor.
+// Everything here is Web Crypto + zod, both edge-compatible.
+export const runtime = "edge";
 import { z } from "zod";
 import {
   authEnabled,
@@ -7,8 +11,6 @@ import {
   SESSION_COOKIE,
   SESSION_MAX_AGE_SEC,
 } from "@/lib/auth";
-
-export const runtime = "edge";
 
 const Body = z.object({ password: z.string().min(1).max(200) });
 

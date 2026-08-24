@@ -5,18 +5,20 @@ const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 /**
  * Model mapping, configurable because Groq's lineup changes often:
- *   GROQ_MODEL_SMART - generation/tailoring/extraction (default: llama-3.3-70b-versatile)
+ *   GROQ_MODEL_SMART - generation/tailoring/extraction (default: openai/gpt-oss-120b)
  *   GROQ_MODEL_FAST  - scoring                          (default: same, unless overridden)
  */
+const FALLBACK_MODEL = "openai/gpt-oss-120b";
+
 function groqModel(anthropicModel: string): string {
   if (anthropicModel.includes("haiku")) {
     return (
       process.env.GROQ_MODEL_FAST?.trim() ||
       process.env.GROQ_MODEL_SMART?.trim() ||
-      "llama-3.3-70b-versatile"
+      FALLBACK_MODEL
     );
   }
-  return process.env.GROQ_MODEL_SMART?.trim() || "llama-3.3-70b-versatile";
+  return process.env.GROQ_MODEL_SMART?.trim() || FALLBACK_MODEL;
 }
 
 export async function callGroq(

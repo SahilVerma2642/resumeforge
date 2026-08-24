@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { callClaudeJSON, MODELS } from "@/lib/anthropic";
+import { callClaudeJSON, MODELS, resolveProvider } from "@/lib/anthropic";
 import type { Suggestion } from "@/lib/types";
 
 export const maxDuration = 60;
@@ -48,6 +48,7 @@ Rules:
 export async function POST(req: Request) {
   try {
     const { resume, fixes } = Body.parse(await req.json());
+    const provider = resolveProvider(req.headers.get("x-ai-provider"));
     const out = await callClaudeJSON<{
       suggestions: Suggestion[];
       skipped: { fix: string; reason: string; whatToAdd: string }[];
@@ -55,7 +56,8 @@ export async function POST(req: Request) {
       SYSTEM,
       `resume:\n${JSON.stringify(resume)}\n\nfixes to address:\n${JSON.stringify(fixes)}`,
       MODELS.smart,
-      6000
+      6000,
+      provider
     );
     const suggestions = (out.suggestions ?? []).map((s) => ({
       ...s,

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { callClaudeJSON, MODELS } from "@/lib/anthropic";
+import { callClaudeJSON, MODELS, resolveProvider } from "@/lib/anthropic";
 import type { ScoreReport } from "@/lib/types";
 
 export const maxDuration = 60;
@@ -33,11 +33,13 @@ Rules:
 export async function POST(req: Request) {
   try {
     const { resume, jobDescription } = Body.parse(await req.json());
+    const provider = resolveProvider(req.headers.get("x-ai-provider"));
     const out = await callClaudeJSON<ScoreReport>(
       SYSTEM,
       `resume:\n${JSON.stringify(resume)}\n\njob_description:\n${jobDescription ?? "none provided"}`,
       MODELS.fast,
-      3000
+      3000,
+      provider
     );
     return NextResponse.json(out);
   } catch (e: any) {

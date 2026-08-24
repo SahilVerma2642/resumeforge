@@ -15,7 +15,13 @@ export const MODELS = {
   fast: "claude-haiku-4-5-20251001", // scoring
 } as const;
 
-type Provider = "anthropic" | "groq" | "cli";
+export type Provider = "anthropic" | "groq" | "cli";
+
+export const PROVIDER_LABELS: Record<Provider, string> = {
+  anthropic: "Anthropic API",
+  groq: "Groq",
+  cli: "Claude CLI (local)",
+};
 
 export function activeProvider(): Provider {
   const forced = process.env.AI_PROVIDER?.trim().toLowerCase();
@@ -23,6 +29,17 @@ export function activeProvider(): Provider {
   if (process.env.ANTHROPIC_API_KEY) return "anthropic";
   if (process.env.GROQ_API_KEY) return "groq";
   return "cli";
+}
+
+/**
+ * Resolve a per-request override (e.g. the "x-ai-provider" header set by the
+ * user's dropdown) against the deployment's env-based default. Falls back to
+ * activeProvider() when the override is missing or not a recognized value.
+ */
+export function resolveProvider(override?: string | null): Provider {
+  const v = override?.trim().toLowerCase();
+  if (v === "anthropic" || v === "groq" || v === "cli") return v;
+  return activeProvider();
 }
 
 async function callViaApi(
@@ -62,9 +79,10 @@ async function callClaude(
   system: string,
   user: string,
   model: string,
-  maxTokens = 4096
+  maxTokens = 4096,
+  provider: Provider = activeProvider()
 ): Promise<string> {
-  switch (activeProvider()) {
+  switch (provider) {
     case "anthropic":
       return callViaApi(system, user, model, maxTokens);
     case "groq":
@@ -76,7 +94,34 @@ async function callClaude(
 
 function sanitize(text: string): string {
   // No em/en dashes in AI output - plain hyphens only
-  return text.replace(/\u2014/g, "-").replace(/\u2013/g, "-");
+  const noDashes = text.replace(/\u2014/g, "-").replace(/\u2013/g, "-");
+  // Providers sometimes emit raw control characters (literal newlines/tabs)
+  // inside JSON string literals instead of escaping them, which JSON.parse
+  // rejects. Escape control chars while inside a string (tracking quote
+  // state and backslash escapes) so structural JSON whitespace is untouched.
+  let out = "";
+  let inString = false;
+  let escaped = false;
+  for (let i = 0; i < noDashes.length; i++) {
+    const ch = noDashes[i];
+    const code = noDashes.charCodeAt(i);
+    if (inString && !escaped && code < 0x20) {
+      if (ch === "\n") out += "\\n";
+      else if (ch === "\r") out += "\\r";
+      else if (ch === "\t") out += "\\t";
+      else out += "\\u" + code.toString(16).padStart(4, "0");
+      continue;
+    }
+    out += ch;
+    if (escaped) {
+      escaped = false;
+    } else if (ch === "\\" && inString) {
+      escaped = true;
+    } else if (ch === '"') {
+      inString = !inString;
+    }
+  }
+  return out;
 }
 
 function stripFences(text: string): string {
@@ -101,14 +146,15 @@ export async function callClaudeJSON<T>(
   system: string,
   user: string,
   model: string = MODELS.smart,
-  maxTokens = 4096
+  maxTokens = 4096,
+  provider: Provider = activeProvider()
 ): Promise<T> {
   const strictSystem =
     system +
     "\n\nReturn ONLY valid JSON. No markdown fences. No commentary before or after the JSON." +
     "\nNEVER use the em dash character (\u2014) in any generated text; use a comma or a plain hyphen instead.";
 
-  let text = await callClaude(strictSystem, user, model, maxTokens);
+  let text = await callClaude(strictSystem, user, model, maxTokens, provider);
   try {
     return JSON.parse(sanitize(stripFences(text))) as T;
   } catch {
@@ -116,7 +162,8 @@ export async function callClaudeJSON<T>(
       strictSystem,
       user + "\n\nREMINDER: Return ONLY valid JSON. No markdown fences. No commentary.",
       model,
-      maxTokens
+      maxTokens,
+      provider
     );
     return JSON.parse(sanitize(stripFences(text))) as T;
   }

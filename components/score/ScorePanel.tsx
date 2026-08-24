@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import { useResumeStore } from "@/lib/store";
+import { useResumeStore, aiProviderHeader } from "@/lib/store";
 import { resumeHasContent } from "@/lib/types";
 import SuggestionList from "@/components/shared/SuggestionList";
 import { Gauge, Loader2, AlertTriangle, AlertCircle, Info, ThumbsUp, Wrench } from "lucide-react";
@@ -120,7 +120,7 @@ export default function ScorePanel() {
     try {
       const res = await fetch("/api/ai/fixes", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...aiProviderHeader() },
         body: JSON.stringify({ resume, fixes: score.fixes }),
       });
       const data = await res.json();
@@ -140,7 +140,7 @@ export default function ScorePanel() {
     try {
       const res = await fetch("/api/ai/score", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...aiProviderHeader() },
         body: JSON.stringify({ resume: useResumeStore.getState().resume, jobDescription: null }),
       });
       if (res.ok) setScore(await res.json());
@@ -155,7 +155,7 @@ export default function ScorePanel() {
     try {
       const res = await fetch("/api/ai/score", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...aiProviderHeader() },
         body: JSON.stringify({ resume, jobDescription: null }),
       });
       const data = await res.json();

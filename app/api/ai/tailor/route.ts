@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { callClaudeJSON, MODELS } from "@/lib/anthropic";
+import { callClaudeJSON, MODELS, resolveProvider } from "@/lib/anthropic";
 import type { Suggestion } from "@/lib/types";
 
 export const maxDuration = 60;
@@ -13,6 +13,7 @@ const Body = z.object({
 interface TailorResponse {
   matchScore: number;
   missingSkills: string[];
+  matchedKeywords: string[];
   keywordsToAdd: string[];
   suggestions: Suggestion[];
 }
@@ -22,6 +23,7 @@ const SYSTEM = `You are a job-description alignment analyst for resumes. Compare
 {
   "matchScore": number (0-100, honest assessment of current alignment),
   "missingSkills": string[] (top skills the JD wants that the resume lacks),
+  "matchedKeywords": string[] (JD skills/terms the resume ALREADY contains, exactly as they appear in the resume),
   "keywordsToAdd": string[] (JD vocabulary the resume should surface),
   "suggestions": [
     {
@@ -52,11 +54,13 @@ Rules:
 export async function POST(req: Request) {
   try {
     const { resume, jobDescription } = Body.parse(await req.json());
+    const provider = resolveProvider(req.headers.get("x-ai-provider"));
     const out = await callClaudeJSON<TailorResponse>(
       SYSTEM,
       `resume:\n${JSON.stringify(resume)}\n\njob_description:\n${jobDescription}`,
       MODELS.smart,
-      6000
+      6000,
+      provider
     );
     out.suggestions = (out.suggestions ?? []).map((s) => ({ ...s, status: "pending" }));
     return NextResponse.json(out);

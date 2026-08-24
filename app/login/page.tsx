@@ -26,9 +26,9 @@ function LoginForm() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Login failed.");
       const total = Math.round(performance.now() - t0);
+      // Diagnostic: total = network round trip, serverMs = time inside the function.
+      // A large gap between them = network/cold-start; large serverMs = server work.
       console.log(`[auth] login round trip ${total}ms (server ${data.serverMs}ms), navigating…`);
-      // Hard navigation: bypasses the client router cache and guarantees the
-      // fresh session cookie is sent on the next request.
       window.location.assign(next);
     } catch (e: any) {
       setError(e.message ?? "Login failed.");

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { callClaudeJSON, MODELS, RESUME_SCHEMA_DOC } from "@/lib/anthropic";
+import { callClaudeJSON, MODELS, RESUME_SCHEMA_DOC, resolveProvider } from "@/lib/anthropic";
 import type { Resume } from "@/lib/types";
 
 /**
@@ -50,11 +50,13 @@ Rules:
 export async function POST(req: Request) {
   try {
     const { resume, jdAnalysis } = Body.parse(await req.json());
+    const provider = resolveProvider(req.headers.get("x-ai-provider"));
     const out = await callClaudeJSON<Resume>(
       SYSTEM,
       `resume:\n${JSON.stringify(resume)}\n\njdAnalysis:\n${JSON.stringify(jdAnalysis ?? null)}`,
       MODELS.smart,
-      6000
+      6000,
+      provider
     );
     return NextResponse.json({ resume: reconcileIds(resume, out) });
   } catch (e: any) {

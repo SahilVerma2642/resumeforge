@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useResumeStore } from "@/lib/store";
+import { useResumeStore, aiProviderHeader } from "@/lib/store";
 import { resumeHasContent, SkillGap } from "@/lib/types";
 import {
   TrendingUp,
@@ -105,7 +105,7 @@ export default function EnhancePanel() {
     try {
       const res = await fetch("/api/ai/enhance", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...aiProviderHeader() },
         body: JSON.stringify({ resume, jobDescription: jd || null }),
       });
       const data = await res.json();

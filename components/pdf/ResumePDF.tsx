@@ -36,7 +36,8 @@ function makeStyles(base: number, modern: boolean) {
       fontFamily: bold,
       fontSize: base * 1.05,
       textTransform: "uppercase",
-      letterSpacing: modern ? 1.2 : 0.6,
+      // No letterSpacing: spaced glyphs extract as broken words ('P RO F...')
+      // in the text layer, which can defeat ATS section detection.
       color: modern ? "#2456F6" : "#000000",
       borderBottomWidth: 0.8,
       borderBottomColor: modern ? "#E4E8EF" : "#333333",
