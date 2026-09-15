@@ -11,7 +11,7 @@ ${RESUME_SCHEMA_DOC}
 Rules:
 - NEVER invent information. Missing fields are "" for strings, [] for arrays, null where allowed.
 - Preserve the user's real metrics and numbers exactly.
-- Split skills into the four groups as best you can; unknown tools go in "tools".
+- Preserve the resume's own skill category labels exactly as written (e.g. "Backend & Architecture", "Cloud & Security"). Do not force items into a fixed set of categories. If the resume lists skills with no categories at all, put them under one group labeled "Skills".
 - Keep bullets as-is at this stage; do not rewrite them.`;
 
 export async function extractResumeFromText(rawText: string, provider?: Provider): Promise<Resume> {

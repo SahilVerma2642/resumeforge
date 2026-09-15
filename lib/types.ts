@@ -29,6 +29,12 @@ export interface Project {
   impact?: string;
 }
 
+export interface SkillGroup {
+  id: string;
+  label: string;
+  items: string[];
+}
+
 export interface Resume {
   personal: {
     name: string;
@@ -40,12 +46,8 @@ export interface Resume {
   };
   summary: string;
   experience: Experience[];
-  skills: {
-    languages: string[];
-    frameworks: string[];
-    databases: string[];
-    tools: string[];
-  };
+  /** Preserves the resume's own category labels instead of a fixed set. */
+  skills: SkillGroup[];
   education: Education[];
   projects: Project[];
   certifications: string[];
@@ -61,7 +63,7 @@ export type SuggestionType =
 export interface Suggestion {
   id: string;
   type: SuggestionType;
-  targetPath: string; // e.g. "experience[0].bullets[2]", "skills.languages", "summary"
+  targetPath: string; // e.g. "experience[0].bullets[2]", "skills[0].items", "summary"
   original: string | null;
   proposed: string;
   reason: string;
@@ -91,7 +93,7 @@ export const emptyResume: Resume = {
   personal: { name: "", email: "", phone: "", location: "", linkedin: "", website: "" },
   summary: "",
   experience: [],
-  skills: { languages: [], frameworks: [], databases: [], tools: [] },
+  skills: [],
   education: [],
   projects: [],
   certifications: [],
@@ -102,12 +104,7 @@ export function resumeHasContent(r: Resume): boolean {
   const hasBullets = r.experience.some((e) =>
     e.bullets.some((b) => b.text.trim().length > 10)
   );
-  const hasSkills =
-    r.skills.languages.length +
-      r.skills.frameworks.length +
-      r.skills.databases.length +
-      r.skills.tools.length >
-    0;
+  const hasSkills = r.skills.some((g) => g.items.length > 0);
   return r.summary.trim().length > 30 || hasBullets || hasSkills;
 }
 

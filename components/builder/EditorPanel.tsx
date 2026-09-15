@@ -11,6 +11,7 @@ import {
   newExperience,
   newEducation,
   newProject,
+  newSkillGroup,
   aiProviderHeader,
 } from "@/lib/store";
 import {
@@ -70,19 +71,50 @@ function TagInput({
   onChange: (v: string[]) => void;
 }) {
   const [draft, setDraft] = useState("");
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
   const add = () => {
     const v = draft.trim().replace(/,$/, "");
     if (v && !values.includes(v)) onChange([...values, v]);
     setDraft("");
   };
+  const reorder = (from: number, to: number) => {
+    if (from === to) return;
+    const next = [...values];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    onChange(next);
+  };
   return (
     <div>
       <label className="label">{label}</label>
       <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-hairline bg-white p-2">
-        {values.map((v) => (
+        {values.map((v, i) => (
           <span
             key={v}
-            className="inline-flex items-center gap-1 rounded-md bg-paper px-2 py-0.5 text-xs font-medium"
+            draggable
+            onDragStart={() => setDragIndex(i)}
+            onDragOver={(e) => {
+              e.preventDefault();
+              if (dragIndex !== null && overIndex !== i) setOverIndex(i);
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              if (dragIndex !== null) reorder(dragIndex, i);
+              setDragIndex(null);
+              setOverIndex(null);
+            }}
+            onDragEnd={() => {
+              setDragIndex(null);
+              setOverIndex(null);
+            }}
+            className={`inline-flex cursor-grab items-center gap-1 rounded-md bg-paper px-2 py-0.5 text-xs font-medium active:cursor-grabbing ${
+              dragIndex === i ? "opacity-40" : ""
+            } ${
+              overIndex === i && dragIndex !== null && dragIndex !== i
+                ? "ring-2 ring-signal/50"
+                : ""
+            }`}
           >
             {v}
             <button
@@ -311,11 +343,8 @@ function AiToolbar() {
             {pending.resume.experience.length} role
             {pending.resume.experience.length === 1 ? "" : "s"} (
             {pending.resume.experience.reduce((n, e) => n + e.bullets.length, 0)} bullets) ·{" "}
-            {pending.resume.skills.languages.length +
-              pending.resume.skills.frameworks.length +
-              pending.resume.skills.databases.length +
-              pending.resume.skills.tools.length}{" "}
-            skills · {pending.resume.education.length} education ·{" "}
+            {pending.resume.skills.reduce((n, g) => n + g.items.length, 0)} skills ·{" "}
+            {pending.resume.education.length} education ·{" "}
             {pending.resume.projects.length} projects
           </p>
           <p className="mt-1 text-xs text-coral">
@@ -542,26 +571,83 @@ export default function EditorPanel() {
 
       <Section title="Technical skills">
         <div className="space-y-4">
-          {(
-            [
-              ["languages", "Languages"],
-              ["frameworks", "Frameworks"],
-              ["databases", "Databases"],
-              ["tools", "Tools & platforms"],
-            ] as const
-          ).map(([key, label]) => (
-            <TagInput
-              key={key}
-              label={label}
-              values={resume.skills[key]}
-              onChange={(v) =>
-                patch((d) => {
-                  d.skills[key] = v;
-                }, "skills")
-              }
-            />
+          {resume.skills.map((g, i) => (
+            <div key={g.id} className="rounded-xl border border-hairline p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-xs font-bold text-slate2">Category {i + 1}</span>
+                <div className="flex gap-1">
+                  <button
+                    className="btn-ghost !px-2 !py-1"
+                    aria-label="Move category up"
+                    disabled={i === 0}
+                    onClick={() =>
+                      patch((d) => {
+                        [d.skills[i - 1], d.skills[i]] = [d.skills[i], d.skills[i - 1]];
+                      }, "skills")
+                    }
+                  >
+                    <ArrowUp size={13} />
+                  </button>
+                  <button
+                    className="btn-ghost !px-2 !py-1"
+                    aria-label="Move category down"
+                    disabled={i === resume.skills.length - 1}
+                    onClick={() =>
+                      patch((d) => {
+                        [d.skills[i + 1], d.skills[i]] = [d.skills[i], d.skills[i + 1]];
+                      }, "skills")
+                    }
+                  >
+                    <ArrowDown size={13} />
+                  </button>
+                  <button
+                    className="btn-danger !px-2 !py-1"
+                    aria-label="Delete category"
+                    onClick={() =>
+                      patch((d) => {
+                        d.skills.splice(i, 1);
+                      }, "skills")
+                    }
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              </div>
+              <label className="label">Category label</label>
+              <input
+                className="field"
+                placeholder="e.g. Languages, Cloud & Security"
+                value={g.label}
+                onChange={(e) =>
+                  patch((d) => {
+                    d.skills[i].label = e.target.value;
+                  }, "skills")
+                }
+              />
+              <div className="mt-3">
+                <TagInput
+                  label="Skills in this category"
+                  values={g.items}
+                  onChange={(v) =>
+                    patch((d) => {
+                      d.skills[i].items = v;
+                    }, "skills")
+                  }
+                />
+              </div>
+            </div>
           ))}
         </div>
+        <button
+          className="btn-ghost mt-3 text-xs"
+          onClick={() =>
+            patch((d) => {
+              d.skills.push(newSkillGroup());
+            }, "skills")
+          }
+        >
+          <Plus size={13} /> Add skill category
+        </button>
       </Section>
 
       <Section title="Education">

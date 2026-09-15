@@ -42,7 +42,7 @@ targetPath format (must be exact - it is machine-applied):
 - rewrite_summary          -> "summary"
 - rewrite_bullet           -> "experience[I].bullets[J]" using zero-based indices from the resume JSON
 - new_bullet               -> "experience[I].bullets"
-- add_skill / add_keyword  -> "skills.languages" | "skills.frameworks" | "skills.databases" | "skills.tools"
+- add_skill / add_keyword  -> "skills[I].items" using the zero-based index of the best-matching existing category group from the resume JSON; if no group fits, use "skills[0].items"
 
 Rules:
 - Generate 6 to 12 suggestions, highest-impact first.

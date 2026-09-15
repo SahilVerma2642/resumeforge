@@ -59,14 +59,9 @@ export function contactLine(r: Resume) {
 }
 
 export function skillRows(r: Resume) {
-  return (
-    [
-      ["Languages", r.skills.languages],
-      ["Frameworks", r.skills.frameworks],
-      ["Databases", r.skills.databases],
-      ["Tools", r.skills.tools],
-    ] as const
-  ).filter(([, v]) => v.length > 0);
+  return r.skills
+    .filter((g) => g.items.length > 0)
+    .map((g) => [g.label, g.items] as const);
 }
 
 /* ---------- Templates ---------- */

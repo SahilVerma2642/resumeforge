@@ -15,6 +15,34 @@ import {
 } from "./types";
 import { applySuggestion, sectionOfPath } from "./applySuggestion";
 
+/**
+ * Skills used to be a fixed { languages, frameworks, databases, tools }
+ * object; it's now an array of { id, label, items } groups so imported
+ * resumes keep their own category names. Convert any old-shape data found
+ * in localStorage (or in saved versions) so it doesn't crash on load.
+ */
+function migrateSkills(skills: any): { id: string; label: string; items: string[] }[] {
+  if (Array.isArray(skills)) return skills;
+  if (!skills || typeof skills !== "object") return [];
+  const LABELS: Record<string, string> = {
+    languages: "Languages",
+    frameworks: "Frameworks",
+    databases: "Databases",
+    tools: "Tools & platforms",
+  };
+  return Object.entries(skills)
+    .filter(([, items]) => Array.isArray(items) && items.length > 0)
+    .map(([key, items]) => ({
+      id: uid(),
+      label: LABELS[key] ?? key,
+      items: items as string[],
+    }));
+}
+
+function migrateResume(r: any) {
+  return r ? { ...r, skills: migrateSkills(r.skills) } : r;
+}
+
 interface ResumeState {
   resume: Resume;
   template: TemplateId;
@@ -197,6 +225,17 @@ export const useResumeStore = create<ResumeState>()(
     }),
     {
       name: "resumeforge-v1",
+      version: 1,
+      migrate: (persisted: any) => {
+        if (!persisted) return persisted;
+        return {
+          ...persisted,
+          resume: migrateResume(persisted.resume),
+          versions: Array.isArray(persisted.versions)
+            ? persisted.versions.map((v: any) => ({ ...v, resume: migrateResume(v.resume) }))
+            : persisted.versions,
+        };
+      },
       partialize: (s) => ({
         resume: s.resume,
         template: s.template,
@@ -245,3 +284,4 @@ export const newProject = () => ({
   description: "",
   impact: "",
 });
+export const newSkillGroup = () => ({ id: uid(), label: "", items: [] });

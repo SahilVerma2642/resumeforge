@@ -173,7 +173,7 @@ export const RESUME_SCHEMA_DOC = `{
   "personal": { "name": string, "email": string, "phone": string, "location": string, "linkedin": string|null, "website": string|null },
   "summary": string,
   "experience": [ { "id": string, "title": string, "company": string, "location": string|null, "startDate": string, "endDate": string ("Present" allowed), "bullets": [ { "id": string, "text": string } ] } ],
-  "skills": { "languages": string[], "frameworks": string[], "databases": string[], "tools": string[] },
+  "skills": [ { "id": string, "label": string, "items": string[] } ],
   "education": [ { "id": string, "degree": string, "field": string, "institution": string, "year": string } ],
   "projects": [ { "id": string, "name": string, "techStack": string[], "description": string, "impact": string|null } ],
   "certifications": string[]

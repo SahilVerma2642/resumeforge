@@ -92,14 +92,16 @@ export default function DiffSheet({
   const { applyReview, discardReview } = useResumeStore();
   const expBefore = new Map(before.experience.map((e) => [e.id, e]));
 
-  const skillRows = (
-    [
-      ["Languages", before.skills.languages, after.skills.languages],
-      ["Frameworks", before.skills.frameworks, after.skills.frameworks],
-      ["Databases", before.skills.databases, after.skills.databases],
-      ["Tools", before.skills.tools, after.skills.tools],
-    ] as const
-  ).filter(([, b, a]) => b.length + a.length > 0);
+  const skillLabels = Array.from(
+    new Set([...before.skills.map((g) => g.label), ...after.skills.map((g) => g.label)])
+  );
+  const skillRows = skillLabels
+    .map((label) => {
+      const b = before.skills.find((g) => g.label === label)?.items ?? [];
+      const a = after.skills.find((g) => g.label === label)?.items ?? [];
+      return [label, b, a] as const;
+    })
+    .filter(([, b, a]) => b.length + a.length > 0);
 
   return (
     <div className="w-full max-w-[820px]">

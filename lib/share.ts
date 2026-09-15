@@ -47,7 +47,13 @@ function hydrate(partial: any): Resume {
   const base: Resume = JSON.parse(JSON.stringify(emptyResume));
   const r = { ...base, ...partial };
   r.personal = { ...base.personal, ...(partial?.personal ?? {}) };
-  r.skills = { ...base.skills, ...(partial?.skills ?? {}) };
+  r.skills = Array.isArray(partial?.skills)
+    ? partial.skills.map((g: any) => ({
+        id: g.id ?? Math.random().toString(36).slice(2, 10),
+        label: g.label ?? "",
+        items: g.items ?? [],
+      }))
+    : [];
   r.experience = (partial?.experience ?? []).map((e: any) => ({
     id: e.id ?? Math.random().toString(36).slice(2, 10),
     title: e.title ?? "",

@@ -6,7 +6,7 @@ import { Resume, Suggestion, uid } from "./types";
  *   "summary" | "personal.name" | "experience[0].title" |
  *   "experience[0].bullets[2]"  (rewrites bullet text) |
  *   "experience[0].bullets"     (new_bullet: appends) |
- *   "skills.languages" etc.     (add_skill / add_keyword: appends)
+ *   "skills[0].items"           (add_skill / add_keyword: appends to that group)
  */
 export function applySuggestion(resume: Resume, s: Suggestion): Resume {
   const next: Resume = JSON.parse(JSON.stringify(resume));

@@ -19,6 +19,9 @@ function reconcileIds(original: Resume, rewritten: Resume): Resume {
       if (orig.bullets?.[j]) b.id = orig.bullets[j].id;
     });
   });
+  out.skills?.forEach((g, i) => {
+    if (original.skills?.[i]) g.id = original.skills[i].id;
+  });
   out.education?.forEach((ed, i) => {
     if (original.education?.[i]) ed.id = original.education[i].id;
   });
